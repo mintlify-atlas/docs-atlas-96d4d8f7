@@ -1,0 +1,136 @@
+{
+  "projectType": "api-service",
+  "projectName": "Task Pro API",
+  "projectDescription": "A REST API for task management built with Spring Boot and Kotlin, featuring authentication, folders, tags, and subtasks.",
+  "theme": "aspen",
+  "primaryColor": "#2563EB",
+  "lightColor": "#3B82F6",
+  "darkColor": "#1E40AF",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/tasks",
+              "concepts/folders",
+              "concepts/tags",
+              "concepts/subtasks"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/docker",
+              "deployment/environment-variables",
+              "deployment/database-setup"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api-reference/auth/register",
+              "api-reference/auth/login",
+              "api-reference/auth/get-current-user"
+            ]
+          },
+          {
+            "group": "Tasks",
+            "pages": [
+              "api-reference/tasks/create-task",
+              "api-reference/tasks/get-tasks",
+              "api-reference/tasks/get-task",
+              "api-reference/tasks/update-task",
+              "api-reference/tasks/delete-task"
+            ]
+          },
+          {
+            "group": "Folders",
+            "pages": [
+              "api-reference/folders/create-folder",
+              "api-reference/folders/get-folders",
+              "api-reference/folders/get-folder",
+              "api-reference/folders/update-folder",
+              "api-reference/folders/delete-folder"
+            ]
+          },
+          {
+            "group": "Tags",
+            "pages": [
+              "api-reference/tags/create-tag",
+              "api-reference/tags/get-tags",
+              "api-reference/tags/get-tag",
+              "api-reference/tags/update-tag",
+              "api-reference/tags/delete-tag"
+            ]
+          },
+          {
+            "group": "Subtasks",
+            "pages": [
+              "api-reference/subtasks/create-subtask",
+              "api-reference/subtasks/get-subtasks",
+              "api-reference/subtasks/update-subtask",
+              "api-reference/subtasks/delete-subtask"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api-reference/utilities/health-check"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "JWT-based authentication with secure user management",
+    "Task organization with folders, tags, and subtasks",
+    "Priority and status tracking for tasks",
+    "PostgreSQL database with JPA/Hibernate ORM",
+    "Docker containerization for easy deployment",
+    "RESTful API design with comprehensive error handling",
+    "CORS support for frontend integration",
+    "Actuator health checks for monitoring"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/register",
+    "POST /api/auth/login",
+    "GET /api/auth/me",
+    "POST /api/tasks",
+    "GET /api/tasks",
+    "GET /api/tasks/{taskId}",
+    "PUT /api/tasks/{taskId}",
+    "DELETE /api/tasks/{taskId}",
+    "POST /api/folders",
+    "GET /api/folders",
+    "GET /api/folders/{folderId}",
+    "PUT /api/folders/{folderId}",
+    "DELETE /api/folders/{folderId}",
+    "POST /api/tags",
+    "GET /api/tags",
+    "GET /api/tags/{tagId}",
+    "PUT /api/tags/{tagId}",
+    "DELETE /api/tags/{tagId}",
+    "POST /api/subtasks",
+    "GET /api/tasks/{taskId}/subtasks",
+    "PUT /api/subtasks/{subtaskId}",
+    "DELETE /api/subtasks/{subtaskId}",
+    "GET /actuator/health"
+  ]
+}

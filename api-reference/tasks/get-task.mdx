@@ -1,0 +1,156 @@
+---
+title: "Get Task"
+description: "Retrieve a single task by ID"
+---
+
+## GET /api/tasks/{taskId}
+
+Retrieves details of a specific task.
+
+### Authentication
+
+Required. Use JWT Bearer token in the Authorization header.
+
+### Path Parameters
+
+<ParamField path="taskId" type="integer" required>
+  The unique identifier of the task to retrieve
+</ParamField>
+
+### Response
+
+<ResponseField name="taskId" type="integer">
+  Unique identifier for the task
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns the task
+</ResponseField>
+
+<ResponseField name="folderId" type="integer">
+  ID of the folder containing the task
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  Array of tag objects associated with the task
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The task title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  The task description
+</ResponseField>
+
+<ResponseField name="durationTagId" type="integer">
+  ID of the duration tag
+</ResponseField>
+
+<ResponseField name="priority" type="integer">
+  Priority level of the task
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status: `pending`, `in_progress`, `completed`, or `cancelled`
+</ResponseField>
+
+<ResponseField name="dueDate" type="string">
+  Due date in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="dueTime" type="string">
+  Due time in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="completedAt" type="string">
+  Timestamp when the task was completed (null if not completed)
+</ResponseField>
+
+<ResponseField name="displayOrder" type="integer">
+  Display order in lists
+</ResponseField>
+
+<ResponseField name="isArchived" type="boolean">
+  Whether the task is archived
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Timestamp when the task was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Timestamp when the task was last updated
+</ResponseField>
+
+<ResponseField name="totalSubtasks" type="integer">
+  Total number of subtasks
+</ResponseField>
+
+<ResponseField name="completedSubtasks" type="integer">
+  Number of completed subtasks
+</ResponseField>
+
+<ResponseField name="completionPercentage" type="number">
+  Percentage of subtasks completed (0-100)
+</ResponseField>
+
+### Example Request
+
+```bash
+curl -X GET https://api.taskpro.com/api/tasks/42 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Success Response (200 OK)
+
+```json
+{
+  "taskId": 42,
+  "userId": 123,
+  "folderId": 5,
+  "tags": [
+    {
+      "tagId": 1,
+      "name": "Documentation",
+      "color": "#3B82F6"
+    },
+    {
+      "tagId": 3,
+      "name": "High Priority",
+      "color": "#EF4444"
+    }
+  ],
+  "title": "Complete API documentation",
+  "description": "Write comprehensive API docs for all endpoints",
+  "durationTagId": null,
+  "priority": 2,
+  "status": "in_progress",
+  "dueDate": "2026-03-20",
+  "dueTime": "17:00:00",
+  "completedAt": null,
+  "displayOrder": 0,
+  "isArchived": false,
+  "createdAt": "2026-03-13T10:30:00",
+  "updatedAt": "2026-03-13T14:15:00",
+  "totalSubtasks": 5,
+  "completedSubtasks": 3,
+  "completionPercentage": 60.0
+}
+```
+
+### Error Response (404 Not Found)
+
+```json
+{
+  "detail": "Task not found"
+}
+```
+
+### Error Response (401 Unauthorized)
+
+```json
+{
+  "detail": "Unauthorized"
+}
+```

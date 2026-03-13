@@ -1,0 +1,147 @@
+---
+title: "Create Folder"
+api: "POST /api/folders"
+description: "Create a new folder to organize tasks"
+---
+
+Create a new folder for organizing tasks. Folders can be nested by specifying a parent folder ID.
+
+## Authentication
+
+Requires a valid JWT token in the Authorization header.
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  The name of the folder (max 100 characters)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description of the folder
+</ParamField>
+
+<ParamField body="color" type="string">
+  Hex color code for the folder (e.g., "#FF5733", max 7 characters)
+</ParamField>
+
+<ParamField body="icon" type="string">
+  Icon identifier for the folder (max 50 characters)
+</ParamField>
+
+<ParamField body="parentFolderId" type="integer">
+  ID of the parent folder for creating nested folders
+</ParamField>
+
+<ParamField body="displayOrder" type="integer" default="0">
+  Sort order for displaying the folder
+</ParamField>
+
+<ParamField body="tagIds" type="array">
+  Array of tag IDs to associate with the folder
+</ParamField>
+
+## Response
+
+<ResponseField name="folderId" type="integer">
+  Unique identifier of the created folder
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns the folder
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the folder
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description of the folder
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  Hex color code of the folder
+</ResponseField>
+
+<ResponseField name="icon" type="string">
+  Icon identifier for the folder
+</ResponseField>
+
+<ResponseField name="parentFolderId" type="integer">
+  ID of the parent folder (null if top-level)
+</ResponseField>
+
+<ResponseField name="displayOrder" type="integer">
+  Sort order for displaying the folder
+</ResponseField>
+
+<ResponseField name="isArchived" type="boolean">
+  Whether the folder is archived
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  Array of tags associated with the folder
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the folder was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp of when the folder was last updated
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.taskpro.com/api/folders \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Work Projects",
+    "description": "All work-related projects",
+    "color": "#3B82F6",
+    "icon": "briefcase",
+    "displayOrder": 1,
+    "tagIds": [1, 2]
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 201 Success
+{
+  "folderId": 42,
+  "userId": 123,
+  "name": "Work Projects",
+  "description": "All work-related projects",
+  "color": "#3B82F6",
+  "icon": "briefcase",
+  "parentFolderId": null,
+  "displayOrder": 1,
+  "isArchived": false,
+  "tags": [
+    {
+      "tagId": 1,
+      "name": "urgent",
+      "color": "#EF4444"
+    },
+    {
+      "tagId": 2,
+      "name": "client",
+      "color": "#10B981"
+    }
+  ],
+  "createdAt": "2026-03-13T10:30:00",
+  "updatedAt": "2026-03-13T10:30:00"
+}
+```
+
+```json 401 Unauthorized
+{
+  "detail": "Invalid or missing authentication token"
+}
+```
+
+</ResponseExample>

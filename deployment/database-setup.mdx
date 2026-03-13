@@ -1,0 +1,574 @@
+---
+title: 'Database Setup'
+description: 'Set up and configure PostgreSQL for Task Pro API'
+---
+
+## Overview
+
+Task Pro API uses PostgreSQL as its primary database. While the application supports H2 in-memory database for development, PostgreSQL is required for production deployments due to its reliability, performance, and data persistence.
+
+## Database Requirements
+
+### Minimum Requirements
+
+- **PostgreSQL Version:** 12 or higher (15+ recommended)
+- **Disk Space:** 10GB minimum, 50GB+ recommended
+- **Memory:** 512MB minimum, 2GB+ recommended
+- **Character Encoding:** UTF-8
+
+### Supported Versions
+
+- PostgreSQL 12
+- PostgreSQL 13
+- PostgreSQL 14
+- PostgreSQL 15 (recommended)
+- PostgreSQL 16
+
+## Quick Setup with Docker
+
+### Using Docker Compose
+
+The repository includes a ready-to-use PostgreSQL setup:
+
+```bash
+# Start PostgreSQL
+docker compose -f docker-compose.postgres.yml up -d
+```
+
+This starts PostgreSQL with default credentials:
+- **Database:** `task_pro_db`
+- **Username:** `task_pro_user`
+- **Password:** `task_pro_pass`
+- **Port:** `5432`
+
+### Verify Database is Running
+
+```bash
+# Check container status
+docker ps | grep postgres
+
+# Check logs
+docker logs task_pro_postgres
+
+# Test connection
+psql -h localhost -U task_pro_user -d task_pro_db
+```
+
+## Manual PostgreSQL Setup
+
+### Install PostgreSQL
+
+<CodeGroup>
+```bash Ubuntu/Debian
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+```bash macOS
+brew install postgresql@15
+brew services start postgresql@15
+```
+
+```bash Docker
+docker run -d \
+  --name task_pro_postgres \
+  -e POSTGRES_DB=task_pro_db \
+  -e POSTGRES_USER=task_pro_user \
+  -e POSTGRES_PASSWORD=task_pro_pass \
+  -p 5432:5432 \
+  -v postgres_data:/var/lib/postgresql/data \
+  postgres:15-alpine
+```
+</CodeGroup>
+
+### Create Database and User
+
+Connect to PostgreSQL as admin:
+
+```bash
+# Linux/macOS
+sudo -u postgres psql
+
+# Docker
+docker exec -it task_pro_postgres psql -U postgres
+```
+
+Create database, user, and grant permissions:
+
+```sql
+-- Create database
+CREATE DATABASE task_pro_db;
+
+-- Create user with password
+CREATE USER task_pro_user WITH PASSWORD 'task_pro_pass';
+
+-- Grant all privileges on database
+GRANT ALL PRIVILEGES ON DATABASE task_pro_db TO task_pro_user;
+
+-- Connect to the database
+\c task_pro_db
+
+-- Grant schema privileges
+GRANT ALL ON SCHEMA public TO task_pro_user;
+
+-- Verify
+\l
+\du
+```
+
+<Note>
+  Replace `task_pro_pass` with a strong password in production.
+</Note>
+
+## Database Schema
+
+The application automatically creates the schema on first run when using `spring.jpa.hibernate.ddl-auto=update` (development) or you can use Flyway migrations.
+
+### Core Tables
+
+Task Pro API creates the following tables:
+
+<Steps>
+  <Step title="users">
+    Stores user accounts with authentication credentials.
+  </Step>
+  <Step title="folders">
+    Hierarchical folder structure for organizing tasks.
+  </Step>
+  <Step title="tasks">
+    Main tasks table with status, priority, due dates.
+  </Step>
+  <Step title="subtasks">
+    Subtasks that break down tasks into smaller pieces.
+  </Step>
+  <Step title="tags">
+    Reusable tags for categorization.
+  </Step>
+  <Step title="task_tags">
+    Join table for many-to-many Task-Tag relationship.
+  </Step>
+  <Step title="folder_tags">
+    Join table for many-to-many Folder-Tag relationship.
+  </Step>
+  <Step title="subtask_tags">
+    Join table for many-to-many Subtask-Tag relationship.
+  </Step>
+</Steps>
+
+### Entity Relationship Diagram
+
+```
+┌─────────────┐
+│    users    │
+│─────────────│
+│ user_id (PK)│
+│ username    │───┐
+│ email       │   │
+│ password_hash   │
+└─────────────┘   │
+                  │ 1:N
+      ┌───────────┴─────────────┬─────────────┐
+      │                         │             │
+      ▼                         ▼             ▼
+┌─────────────┐          ┌──────────┐   ┌─────────┐
+│   folders   │          │  tasks   │   │  tags   │
+│─────────────│          │──────────│   │─────────│
+│ folder_id(PK)          │ task_id  │   │ tag_id  │
+│ user_id (FK)│          │ user_id  │   │ user_id │
+│ parent_folder_id (FK)  │ folder_id│   │ tag_name│
+│ name        │          │ title    │   │ color   │
+│ color       │          │ status   │   └─────────┘
+│ icon        │          │ priority │        │
+└─────────────┘          │ due_date │        │ N:M
+                         └──────────┘        │
+                              │ 1:N          │
+                              ▼              │
+                        ┌────────────┐       │
+                        │  subtasks  │       │
+                        │────────────│       │
+                        │ subtask_id │       │
+                        │ task_id(FK)│       │
+                        │ title      │       │
+                        │ status     │       │
+                        └────────────┘       │
+                              │              │
+                              └──────┬───────┘
+                                     │ N:M
+                              ┌──────▼───────┐
+                              │  task_tags   │
+                              │  folder_tags │
+                              │ subtask_tags │
+                              └──────────────┘
+```
+
+## Schema Validation
+
+In production, use `validate` mode to ensure schema matches entities:
+
+```bash
+SPRING_JPA_HBM2DDL=validate
+```
+
+This prevents automatic schema modifications and ensures migrations are explicit.
+
+## Database Migrations with Flyway
+
+The application includes Flyway for database migrations (version 9.20.0 in dependencies).
+
+### Migration File Structure
+
+```
+src/main/resources/db/migration/
+├── V1__initial_schema.sql
+├── V2__add_duration_tags.sql
+└── V3__add_indexes.sql
+```
+
+### Example Migration
+
+```sql
+-- V1__initial_schema.sql
+CREATE TABLE users (
+    user_id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255),
+    full_name VARCHAR(100),
+    avatar_url VARCHAR(500),
+    is_active BOOLEAN DEFAULT true,
+    email_verified BOOLEAN DEFAULT false,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    last_login_at TIMESTAMP
+);
+
+CREATE TABLE folders (
+    folder_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(user_id),
+    parent_folder_id BIGINT REFERENCES folders(folder_id),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    color VARCHAR(7),
+    icon VARCHAR(50),
+    display_order INT DEFAULT 0,
+    is_archived BOOLEAN DEFAULT false,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE tasks (
+    task_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(user_id),
+    folder_id BIGINT REFERENCES folders(folder_id),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    duration_tag_id INT,
+    priority INT DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    due_date DATE,
+    due_time TIME,
+    completed_at TIMESTAMP,
+    display_order INT DEFAULT 0,
+    is_archived BOOLEAN DEFAULT false,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE subtasks (
+    subtask_id BIGSERIAL PRIMARY KEY,
+    task_id BIGINT NOT NULL REFERENCES tasks(task_id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    duration_tag_id INT,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    completed_at TIMESTAMP,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE tags (
+    tag_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(user_id),
+    tag_name VARCHAR(100) NOT NULL,
+    color VARCHAR(7),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE task_tags (
+    task_id BIGINT REFERENCES tasks(task_id) ON DELETE CASCADE,
+    tag_id BIGINT REFERENCES tags(tag_id) ON DELETE CASCADE,
+    PRIMARY KEY (task_id, tag_id)
+);
+
+CREATE TABLE folder_tags (
+    folder_id BIGINT REFERENCES folders(folder_id) ON DELETE CASCADE,
+    tag_id BIGINT REFERENCES tags(tag_id) ON DELETE CASCADE,
+    PRIMARY KEY (folder_id, tag_id)
+);
+
+CREATE TABLE subtask_tags (
+    subtask_id BIGINT REFERENCES subtasks(subtask_id) ON DELETE CASCADE,
+    tag_id BIGINT REFERENCES tags(tag_id) ON DELETE CASCADE,
+    PRIMARY KEY (subtask_id, tag_id)
+);
+```
+
+### Performance Indexes
+
+```sql
+-- V2__add_indexes.sql
+CREATE INDEX idx_tasks_user_id ON tasks(user_id);
+CREATE INDEX idx_tasks_folder_id ON tasks(folder_id);
+CREATE INDEX idx_tasks_status ON tasks(status);
+CREATE INDEX idx_tasks_due_date ON tasks(due_date);
+CREATE INDEX idx_folders_user_id ON folders(user_id);
+CREATE INDEX idx_folders_parent ON folders(parent_folder_id);
+CREATE INDEX idx_subtasks_task_id ON subtasks(task_id);
+CREATE INDEX idx_tags_user_id ON tags(user_id);
+```
+
+## Connection Pooling
+
+Spring Boot uses HikariCP for connection pooling with sensible defaults:
+
+```yaml
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+```
+
+Override with environment variables:
+```bash
+SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=20
+SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=10
+```
+
+## Backup and Restore
+
+### Backup Database
+
+```bash
+# Full database dump
+pg_dump -h localhost -U task_pro_user task_pro_db > backup.sql
+
+# With Docker
+docker exec task_pro_postgres pg_dump -U task_pro_user task_pro_db > backup.sql
+
+# Compressed backup
+pg_dump -h localhost -U task_pro_user task_pro_db | gzip > backup.sql.gz
+```
+
+### Restore Database
+
+```bash
+# Restore from backup
+psql -h localhost -U task_pro_user task_pro_db < backup.sql
+
+# With Docker
+docker exec -i task_pro_postgres psql -U task_pro_user task_pro_db < backup.sql
+
+# From compressed backup
+gunzip -c backup.sql.gz | psql -h localhost -U task_pro_user task_pro_db
+```
+
+### Automated Backups
+
+```bash
+#!/bin/bash
+# backup-db.sh
+DATETIME=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/backups"
+FILENAME="task_pro_backup_${DATETIME}.sql.gz"
+
+pg_dump -h localhost -U task_pro_user task_pro_db | gzip > "${BACKUP_DIR}/${FILENAME}"
+
+# Keep only last 7 days
+find ${BACKUP_DIR} -name "task_pro_backup_*.sql.gz" -mtime +7 -delete
+```
+
+Schedule with cron:
+```bash
+# Run daily at 2 AM
+0 2 * * * /path/to/backup-db.sh
+```
+
+## Monitoring
+
+### Database Size
+
+```sql
+SELECT pg_size_pretty(pg_database_size('task_pro_db'));
+```
+
+### Table Sizes
+
+```sql
+SELECT 
+    schemaname,
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+```
+
+### Active Connections
+
+```sql
+SELECT 
+    count(*) as connection_count,
+    state
+FROM pg_stat_activity
+WHERE datname = 'task_pro_db'
+GROUP BY state;
+```
+
+### Slow Queries
+
+```sql
+SELECT 
+    query,
+    mean_exec_time,
+    calls
+FROM pg_stat_statements
+ORDER BY mean_exec_time DESC
+LIMIT 10;
+```
+
+## Performance Tuning
+
+### PostgreSQL Configuration
+
+Edit `postgresql.conf` or set via Docker environment:
+
+```bash
+# Increase shared memory
+SHARED_BUFFERS=256MB
+
+# Increase work memory
+WORK_MEM=16MB
+
+# Enable query planning
+EFFECTIVE_CACHE_SIZE=1GB
+
+# Autovacuum settings
+AUTOVACUUM=on
+```
+
+### Docker PostgreSQL with Custom Config
+
+```yaml
+services:
+  db:
+    image: postgres:15-alpine
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "effective_cache_size=1GB"
+```
+
+## Security
+
+<CardGroup cols={2}>
+  <Card title="Strong Passwords" icon="key">
+    Use strong, unique passwords for database users. Never use default passwords in production.
+  </Card>
+  <Card title="Network Isolation" icon="network-wired">
+    Keep database on private network, not exposed to internet. Use VPN or private networking.
+  </Card>
+  <Card title="SSL/TLS Encryption" icon="lock">
+    Enable SSL for database connections in production.
+  </Card>
+  <Card title="Least Privilege" icon="user-lock">
+    Application user should have only necessary permissions, not superuser.
+  </Card>
+  <Card title="Regular Backups" icon="floppy-disk">
+    Automate daily backups and test restore procedures regularly.
+  </Card>
+  <Card title="Update Regularly" icon="arrows-rotate">
+    Keep PostgreSQL updated with latest security patches.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Connection Refused
+
+**Symptom:** Application can't connect to database.
+
+**Solutions:**
+```bash
+# Check if PostgreSQL is running
+systemctl status postgresql
+docker ps | grep postgres
+
+# Check PostgreSQL is listening
+netstat -an | grep 5432
+
+# Test connection
+psql -h localhost -U task_pro_user -d task_pro_db
+```
+
+### Authentication Failed
+
+**Symptom:** Password authentication failed.
+
+**Solutions:**
+- Verify username and password
+- Check `pg_hba.conf` for authentication method
+- Reset password if needed:
+  ```sql
+  ALTER USER task_pro_user WITH PASSWORD 'new_password';
+  ```
+
+### Database Does Not Exist
+
+**Symptom:** Database "task_pro_db" does not exist.
+
+**Solutions:**
+```sql
+-- Create the database
+CREATE DATABASE task_pro_db;
+
+-- Verify
+\l
+```
+
+### Schema Validation Failed
+
+**Symptom:** Hibernate schema validation error.
+
+**Solutions:**
+- Drop and recreate database (development only)
+- Run migrations with Flyway
+- Use `spring.jpa.hibernate.ddl-auto=update` temporarily
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Docker Deployment" icon="docker" href="/deployment/docker">
+    Deploy the complete stack with Docker
+  </Card>
+  <Card title="Environment Variables" icon="sliders" href="/deployment/environment-variables">
+    Configure database connection variables
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get started with the API
+  </Card>
+  <Card title="Core Concepts" icon="book" href="/concepts/tasks">
+    Understand the data model
+  </Card>
+</CardGroup>

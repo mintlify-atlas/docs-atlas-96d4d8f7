@@ -1,0 +1,449 @@
+---
+title: 'Folders'
+description: 'Organize tasks with hierarchical folders'
+---
+
+## Overview
+
+Folders provide a hierarchical organization system for your tasks. You can create folders, nest them within each other, customize their appearance with colors and icons, and tag them for additional categorization.
+
+## Folder Model
+
+The Folder entity structure:
+
+```kotlin
+@Entity
+@Table(name = "folders")
+data class Folder(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val folderId: Long? = null,
+    
+    val userId: Long,
+    val name: String,
+    val description: String? = null,
+    val color: String? = null,
+    val icon: String? = null,
+    val parentFolderId: Long? = null,
+    val displayOrder: Int = 0,
+    val isArchived: Boolean = false,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null,
+    
+    var tags: Set<Tag> = emptySet(),
+    var parentFolder: Folder? = null,
+    var children: Set<Folder> = emptySet(),
+    var user: User? = null,
+    var tasks: Set<Task> = emptySet()
+)
+```
+
+## Folder Properties
+
+### Core Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `folderId` | Long | Unique identifier (auto-generated) |
+| `userId` | Long | ID of the user who owns the folder |
+| `name` | String | Folder name (required, max 100 chars) |
+| `description` | String | Detailed description (optional, text) |
+
+### Visual Customization
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `color` | String | Hex color code (e.g., "#3B82F6", max 7 chars) |
+| `icon` | String | Icon identifier (e.g., "folder-open", max 50 chars) |
+
+### Organization
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `parentFolderId` | Long | ID of parent folder for nesting (optional) |
+| `displayOrder` | Int | Order for sorting folders (default: 0) |
+| `isArchived` | Boolean | Whether the folder is archived |
+| `tags` | Set&lt;Tag&gt; | Associated tags for categorization |
+
+### Relationships
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `parentFolder` | Folder | Parent folder (if nested) |
+| `children` | Set&lt;Folder&gt; | Child folders (subfolders) |
+| `tasks` | Set&lt;Task&gt; | Tasks contained in this folder |
+| `user` | User | Owner of the folder |
+
+## Creating a Folder
+
+Create a new folder to organize your tasks:
+
+```bash
+curl -X POST https://api.taskpro.com/api/folders \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "Web Development",
+    "description": "All web development related tasks",
+    "color": "#3B82F6",
+    "icon": "code",
+    "displayOrder": 1,
+    "tagIds": [2, 5]
+  }'
+```
+
+### Request DTO
+
+```kotlin
+data class FolderCreateDto(
+    val name: String,
+    val description: String? = null,
+    val color: String? = null,
+    val icon: String? = null,
+    val parentFolderId: Long? = null,
+    val displayOrder: Int = 0,
+    val tagIds: List<Long>? = null
+)
+```
+
+### Response
+
+```json
+{
+  "folderId": 5,
+  "userId": 1,
+  "tags": [
+    {
+      "tagId": 2,
+      "tagName": "development",
+      "color": "#10B981"
+    },
+    {
+      "tagId": 5,
+      "tagName": "frontend",
+      "color": "#8B5CF6"
+    }
+  ],
+  "name": "Web Development",
+  "description": "All web development related tasks",
+  "color": "#3B82F6",
+  "icon": "code",
+  "parentFolderId": null,
+  "displayOrder": 1,
+  "isArchived": false,
+  "createdAt": "2024-03-15T14:30:00",
+  "updatedAt": "2024-03-15T14:30:00"
+}
+```
+
+## Hierarchical Folders
+
+Folders can be nested to create a hierarchical structure:
+
+### Creating a Subfolder
+
+Create a child folder by specifying the `parentFolderId`:
+
+```bash
+curl -X POST https://api.taskpro.com/api/folders \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "React Projects",
+    "description": "React-specific development tasks",
+    "color": "#61DAFB",
+    "icon": "react",
+    "parentFolderId": 5
+  }'
+```
+
+### Folder Hierarchy Example
+
+```
+Web Development (5)
+├── React Projects (12)
+│   ├── Task Pro App (18)
+│   └── Portfolio Site (19)
+├── Backend APIs (13)
+└── DevOps (14)
+    ├── CI/CD (20)
+    └── Monitoring (21)
+```
+
+<Info>
+  Folders support unlimited nesting depth, but keep your hierarchy shallow (2-3 levels) for better usability.
+</Info>
+
+## Retrieving Folders
+
+### Get All Folders
+
+Retrieve all folders for the authenticated user:
+
+```bash
+curl -X GET https://api.taskpro.com/api/folders \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Response
+
+```json
+[
+  {
+    "folderId": 5,
+    "userId": 1,
+    "tags": [
+      {
+        "tagId": 2,
+        "tagName": "development",
+        "color": "#10B981"
+      }
+    ],
+    "name": "Web Development",
+    "description": "All web development related tasks",
+    "color": "#3B82F6",
+    "icon": "code",
+    "parentFolderId": null,
+    "displayOrder": 1,
+    "isArchived": false,
+    "createdAt": "2024-03-15T14:30:00",
+    "updatedAt": "2024-03-15T14:30:00"
+  },
+  {
+    "folderId": 12,
+    "userId": 1,
+    "tags": [],
+    "name": "React Projects",
+    "description": "React-specific development tasks",
+    "color": "#61DAFB",
+    "icon": "react",
+    "parentFolderId": 5,
+    "displayOrder": 0,
+    "isArchived": false,
+    "createdAt": "2024-03-15T15:00:00",
+    "updatedAt": "2024-03-15T15:00:00"
+  }
+]
+```
+
+### Include Archived Folders
+
+By default, archived folders are excluded:
+
+```bash
+curl -X GET "https://api.taskpro.com/api/folders?includeArchived=true" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Get Single Folder
+
+Retrieve a specific folder by ID:
+
+```bash
+curl -X GET https://api.taskpro.com/api/folders/5 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+## Updating a Folder
+
+Update folder properties:
+
+```bash
+curl -X PUT https://api.taskpro.com/api/folders/5 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "Frontend Development",
+    "color": "#8B5CF6",
+    "displayOrder": 2
+  }'
+```
+
+### Update DTO
+
+```kotlin
+data class FolderUpdateDto(
+    val name: String? = null,
+    val description: String? = null,
+    val color: String? = null,
+    val icon: String? = null,
+    val displayOrder: Int? = null,
+    val isArchived: Boolean? = null
+)
+```
+
+<Note>
+  You cannot change the `parentFolderId` after creation. To move a folder, delete and recreate it with the new parent.
+</Note>
+
+## Deleting a Folder
+
+Permanently delete a folder:
+
+```bash
+curl -X DELETE https://api.taskpro.com/api/folders/5 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+<Warning>
+  Deleting a folder does not delete the tasks within it. Tasks will simply have their `folderId` set to null. Consider archiving folders instead of deleting them.
+</Warning>
+
+## Color Customization
+
+Folders support hex color codes for visual organization:
+
+<CodeGroup>
+```json Recommended Colors
+{
+  "blue": "#3B82F6",
+  "green": "#10B981",
+  "purple": "#8B5CF6",
+  "red": "#EF4444",
+  "yellow": "#F59E0B",
+  "pink": "#EC4899",
+  "indigo": "#6366F1",
+  "teal": "#14B8A6"
+}
+```
+
+```bash Example
+curl -X POST https://api.taskpro.com/api/folders \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "Personal",
+    "color": "#EC4899",
+    "icon": "user"
+  }'
+```
+</CodeGroup>
+
+## Folder Relationships
+
+### Self-Referential: Folder ↔ Folder
+
+Folders can contain other folders through the parent-child relationship:
+
+```kotlin
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "parent_folder_id", insertable = false, updatable = false)
+var parentFolder: Folder? = null
+
+@OneToMany(mappedBy = "parentFolder")
+var children: Set<Folder> = emptySet()
+```
+
+### One-to-Many: Folder → Task
+
+A folder can contain multiple tasks:
+
+```kotlin
+@OneToMany(mappedBy = "folder")
+var tasks: Set<Task> = emptySet()
+```
+
+### Many-to-Many: Folder ↔ Tag
+
+Folders can have multiple tags for categorization:
+
+```kotlin
+@ManyToMany
+@JoinTable(
+    name = "folder_tags",
+    joinColumns = [JoinColumn(name = "folder_id")],
+    inverseJoinColumns = [JoinColumn(name = "tag_id")]
+)
+var tags: Set<Tag> = emptySet()
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Project-Based" icon="diagram-project">
+    Create folders for each project to keep project tasks organized separately.
+  </Card>
+  <Card title="Area of Responsibility" icon="briefcase">
+    Organize by life areas: Work, Personal, Health, Finance, etc.
+  </Card>
+  <Card title="Client Management" icon="users">
+    Create a folder for each client with subfolders for different projects.
+  </Card>
+  <Card title="GTD Method" icon="inbox">
+    Implement Getting Things Done with folders like Inbox, Next Actions, Waiting For, Someday/Maybe.
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Steps>
+  <Step title="Keep hierarchy shallow">
+    Limit folder nesting to 2-3 levels for better navigation and performance.
+  </Step>
+  <Step title="Use consistent naming">
+    Establish naming conventions like "Project: Name" or "Client - Project".
+  </Step>
+  <Step title="Color code by category">
+    Use colors consistently (e.g., blue for work, green for personal).
+  </Step>
+  <Step title="Archive old folders">
+    Instead of deleting, archive completed project folders to maintain history.
+  </Step>
+  <Step title="Use displayOrder">
+    Set display order to prioritize important folders at the top of lists.
+  </Step>
+</Steps>
+
+## Example: Complete Folder Structure
+
+Here's a practical example of a well-organized folder structure:
+
+```json
+[
+  {
+    "name": "Work",
+    "color": "#3B82F6",
+    "icon": "briefcase",
+    "displayOrder": 1,
+    "children": [
+      {"name": "Q1 Goals", "parentFolderId": 1},
+      {"name": "Meetings", "parentFolderId": 1},
+      {"name": "Development", "parentFolderId": 1}
+    ]
+  },
+  {
+    "name": "Personal",
+    "color": "#10B981",
+    "icon": "home",
+    "displayOrder": 2,
+    "children": [
+      {"name": "Health & Fitness", "parentFolderId": 2},
+      {"name": "Learning", "parentFolderId": 2},
+      {"name": "Home Improvement", "parentFolderId": 2}
+    ]
+  },
+  {
+    "name": "Side Projects",
+    "color": "#8B5CF6",
+    "icon": "lightbulb",
+    "displayOrder": 3
+  }
+]
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tasks" icon="check" href="/concepts/tasks">
+    Learn how to create and manage tasks within folders
+  </Card>
+  <Card title="Tags" icon="tag" href="/concepts/tags">
+    Add cross-cutting categorization with tags
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/folders/create-folder">
+    Explore all folder endpoints
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get started with the Task Pro API
+  </Card>
+</CardGroup>

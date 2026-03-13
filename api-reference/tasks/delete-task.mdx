@@ -1,0 +1,60 @@
+---
+title: "Delete Task"
+description: "Delete a task permanently"
+---
+
+## DELETE /api/tasks/{taskId}
+
+Permanently deletes a task and all associated subtasks.
+
+### Authentication
+
+Required. Use JWT Bearer token in the Authorization header.
+
+### Path Parameters
+
+<ParamField path="taskId" type="integer" required>
+  The unique identifier of the task to delete
+</ParamField>
+
+### Response
+
+Returns 204 No Content on successful deletion with an empty response body.
+
+### Example Request
+
+```bash
+curl -X DELETE https://api.taskpro.com/api/tasks/42 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Success Response (204 No Content)
+
+No response body is returned for successful deletion.
+
+```
+HTTP/1.1 204 No Content
+```
+
+### Error Response (404 Not Found)
+
+```json
+{
+  "detail": "Task not found"
+}
+```
+
+### Error Response (401 Unauthorized)
+
+```json
+{
+  "detail": "Unauthorized"
+}
+```
+
+### Important Notes
+
+- Deleting a task is permanent and cannot be undone
+- All subtasks associated with the task will also be deleted
+- Consider archiving tasks instead of deleting them to preserve historical data
+- Deleted tasks cannot be recovered

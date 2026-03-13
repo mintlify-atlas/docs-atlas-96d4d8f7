@@ -1,0 +1,453 @@
+---
+title: 'Environment Variables'
+description: 'Configure Task Pro API with environment variables'
+---
+
+## Overview
+
+Task Pro API is configured entirely through environment variables, following the [12-factor app](https://12factor.net/) methodology. This allows the same Docker image to be deployed across different environments (dev, staging, production) with different configurations.
+
+## Required Variables
+
+These variables must be set for production deployment:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SPRING_PROFILES_ACTIVE` | Active Spring profile (`dev` or `prod`) | `prod` |
+| `SPRING_DATASOURCE_URL` | PostgreSQL JDBC connection URL | `jdbc:postgresql://db:5432/task_pro_db` |
+| `SPRING_DATASOURCE_USERNAME` | Database username | `task_pro_user` |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | `secure_password_123` |
+| `APP_CORS_ALLOWED_ORIGINS` | Allowed CORS origins (comma-separated) | `https://app.example.com,https://www.example.com` |
+
+## Optional Variables
+
+These variables have defaults but can be customized:
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `SPRING_JPA_HBM2DDL` | Hibernate DDL mode | `validate` (prod), `update` (dev) |
+| `SERVER_PORT` | HTTP server port | `8080` |
+| `JAVA_TOOL_OPTIONS` | JVM options (memory, GC, etc.) | `-Xms256m -Xmx512m` |
+
+## Spring Profiles
+
+### Development Profile (`dev`)
+
+Used for local development:
+
+```bash
+SPRING_PROFILES_ACTIVE=dev
+```
+
+Characteristics:
+- Uses H2 in-memory database if PostgreSQL not configured
+- Hibernate auto-creates/updates schema (`spring.jpa.hibernate.ddl-auto=update`)
+- Verbose logging
+- CORS allows all origins by default
+
+<Warning>
+  Never use the `dev` profile in production. It has relaxed security settings.
+</Warning>
+
+### Production Profile (`prod`)
+
+Used for production deployment:
+
+```bash
+SPRING_PROFILES_ACTIVE=prod
+```
+
+Characteristics:
+- Requires PostgreSQL connection
+- Hibernate validates schema only (`spring.jpa.hibernate.ddl-auto=validate`)
+- Production-level logging
+- CORS requires explicit origins
+- Security hardened
+
+## Database Configuration
+
+### PostgreSQL Connection
+
+The JDBC URL format for PostgreSQL:
+
+```bash
+SPRING_DATASOURCE_URL=jdbc:postgresql://<HOST>:<PORT>/<DATABASE>
+```
+
+### Examples
+
+<CodeGroup>
+```bash Docker Compose
+# When using docker-compose, use service name as host
+SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/task_pro_db
+SPRING_DATASOURCE_USERNAME=task_pro_user
+SPRING_DATASOURCE_PASSWORD=task_pro_pass
+```
+
+```bash External Database
+# Connecting to external managed database
+SPRING_DATASOURCE_URL=jdbc:postgresql://db.example.com:5432/task_pro_production
+SPRING_DATASOURCE_USERNAME=prod_user
+SPRING_DATASOURCE_PASSWORD=strong_password_here
+```
+
+```bash Localhost
+# Connecting to PostgreSQL on host machine
+SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/task_pro_db
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=postgres
+```
+
+```bash SSL Connection
+# With SSL/TLS encryption
+SPRING_DATASOURCE_URL=jdbc:postgresql://db.example.com:5432/task_pro_db?ssl=true&sslmode=require
+SPRING_DATASOURCE_USERNAME=task_pro_user
+SPRING_DATASOURCE_PASSWORD=secure_password
+```
+</CodeGroup>
+
+## Hibernate DDL Mode
+
+Controls how Hibernate manages database schema:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `validate` | Validate schema, no changes | Production |
+| `update` | Auto-update schema | Development |
+| `create` | Drop and recreate schema | Testing |
+| `create-drop` | Create on start, drop on stop | Integration tests |
+| `none` | No schema management | When using Flyway/Liquibase |
+
+### Production Recommendation
+
+```bash
+SPRING_JPA_HBM2DDL=validate
+```
+
+<Info>
+  In production, use `validate` mode and manage schema changes with database migration tools like Flyway (included in dependencies) or Liquibase.
+</Info>
+
+## CORS Configuration
+
+Control which frontend domains can access your API:
+
+### Single Origin
+
+```bash
+APP_CORS_ALLOWED_ORIGINS=https://app.example.com
+```
+
+### Multiple Origins
+
+```bash
+APP_CORS_ALLOWED_ORIGINS=https://app.example.com,https://www.example.com,https://admin.example.com
+```
+
+### Allow All (Development Only)
+
+```bash
+APP_CORS_ALLOWED_ORIGINS=*
+```
+
+<Warning>
+  Using `*` for CORS origins in production is a security risk. Always specify exact domains.
+</Warning>
+
+### CORS with Credentials
+
+If you need to send cookies or credentials:
+
+```bash
+# Do NOT use * when credentials are needed
+APP_CORS_ALLOWED_ORIGINS=https://app.example.com
+```
+
+<Note>
+  When using credentials (cookies, HTTP authentication), CORS does not allow wildcard origins. You must specify exact domains.
+</Note>
+
+## JVM Configuration
+
+Control Java Virtual Machine behavior:
+
+### Memory Settings
+
+```bash
+# Minimum: 256MB initial, 512MB max
+JAVA_TOOL_OPTIONS="-Xms256m -Xmx512m"
+
+# Small deployment
+JAVA_TOOL_OPTIONS="-Xms512m -Xmx1024m"
+
+# Medium deployment
+JAVA_TOOL_OPTIONS="-Xms1024m -Xmx2048m"
+
+# Large deployment
+JAVA_TOOL_OPTIONS="-Xms2048m -Xmx4096m"
+```
+
+### Garbage Collection
+
+```bash
+# Use G1GC for better performance
+JAVA_TOOL_OPTIONS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+```
+
+### Debug Mode
+
+```bash
+# Enable remote debugging (development only)
+JAVA_TOOL_OPTIONS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+```
+
+<Warning>
+  Never enable debug mode in production. It's a severe security vulnerability.
+</Warning>
+
+## Complete Examples
+
+### Development Environment
+
+```bash
+# .env file for local development
+SPRING_PROFILES_ACTIVE=dev
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/task_pro_db
+SPRING_DATASOURCE_USERNAME=task_pro_user
+SPRING_DATASOURCE_PASSWORD=task_pro_pass
+SPRING_JPA_HBM2DDL=update
+APP_CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+JAVA_TOOL_OPTIONS="-Xms256m -Xmx512m"
+```
+
+### Production Environment
+
+```bash
+# .env file for production
+SPRING_PROFILES_ACTIVE=prod
+SPRING_DATASOURCE_URL=jdbc:postgresql://prod-db.example.com:5432/task_pro_production
+SPRING_DATASOURCE_USERNAME=task_pro_prod_user
+SPRING_DATASOURCE_PASSWORD=very_secure_password_123!@#
+SPRING_JPA_HBM2DDL=validate
+APP_CORS_ALLOWED_ORIGINS=https://app.taskpro.com,https://www.taskpro.com
+JAVA_TOOL_OPTIONS="-Xms1024m -Xmx2048m -XX:+UseG1GC"
+```
+
+### Docker Run Command
+
+```bash
+docker run -d \
+  --name task-pro-api \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://db.example.com:5432/task_pro_db \
+  -e SPRING_DATASOURCE_USERNAME=task_pro_user \
+  -e SPRING_DATASOURCE_PASSWORD=secure_password \
+  -e SPRING_JPA_HBM2DDL=validate \
+  -e APP_CORS_ALLOWED_ORIGINS=https://app.example.com \
+  -e JAVA_TOOL_OPTIONS="-Xms512m -Xmx1024m" \
+  task-pro-api:latest
+```
+
+### Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  api:
+    image: task-pro-api:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: ${PROFILE:-prod}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME:-task_pro_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-task_pro_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Database password required}
+      SPRING_JPA_HBM2DDL: ${DDL_MODE:-validate}
+      APP_CORS_ALLOWED_ORIGINS: ${CORS_ORIGINS:?CORS origins required}
+      JAVA_TOOL_OPTIONS: ${JAVA_OPTS:--Xms512m -Xmx1024m}
+```
+
+With `.env` file:
+```bash
+PROFILE=prod
+DB_NAME=task_pro_db
+DB_USER=task_pro_user
+DB_PASSWORD=secure_password_here
+DDL_MODE=validate
+CORS_ORIGINS=https://app.example.com
+JAVA_OPTS=-Xms1024m -Xmx2048m -XX:+UseG1GC
+```
+
+## Kubernetes/Cloud Deployment
+
+### Kubernetes ConfigMap
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: task-pro-config
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-service:5432/task_pro_db"
+  SPRING_JPA_HBM2DDL: "validate"
+  APP_CORS_ALLOWED_ORIGINS: "https://app.example.com"
+```
+
+### Kubernetes Secret
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: task-pro-secrets
+type: Opaque
+stringData:
+  SPRING_DATASOURCE_USERNAME: "task_pro_user"
+  SPRING_DATASOURCE_PASSWORD: "secure_password"
+```
+
+### Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-pro-api
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: api
+        image: task-pro-api:v1.0.0
+        envFrom:
+        - configMapRef:
+            name: task-pro-config
+        - secretRef:
+            name: task-pro-secrets
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Xms1024m -Xmx2048m"
+```
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Never Commit Secrets" icon="key">
+    Don't commit `.env` files or secrets to version control. Use `.gitignore`.
+  </Card>
+  <Card title="Use Secret Management" icon="vault">
+    Use Docker secrets, Kubernetes secrets, or cloud secret managers for sensitive data.
+  </Card>
+  <Card title="Rotate Passwords" icon="rotate">
+    Regularly rotate database passwords and update environment variables.
+  </Card>
+  <Card title="Principle of Least Privilege" icon="user-lock">
+    Database user should have only necessary permissions, not admin rights.
+  </Card>
+  <Card title="Encrypt in Transit" icon="lock">
+    Use SSL/TLS for database connections in production.
+  </Card>
+  <Card title="Monitor Access" icon="eye">
+    Log and monitor database access and API usage.
+  </Card>
+</CardGroup>
+
+## Validation
+
+Verify your configuration:
+
+### Check Active Profile
+
+```bash
+curl http://localhost:8080/actuator/info
+```
+
+### Test Database Connection
+
+```bash
+curl http://localhost:8080/actuator/health
+```
+
+Healthy response:
+```json
+{
+  "status": "UP"
+}
+```
+
+### View Application Logs
+
+```bash
+# Docker
+docker logs task-pro-api
+
+# Docker Compose
+docker compose logs api
+
+# Kubernetes
+kubectl logs deployment/task-pro-api
+```
+
+Look for:
+```
+Started TaskProApiApplication in X.XXX seconds
+Hibernate: Initialized JPA EntityManagerFactory
+```
+
+## Troubleshooting
+
+### Database Connection Failed
+
+**Symptom:** Application fails to start with database connection error.
+
+**Solutions:**
+- Verify `SPRING_DATASOURCE_URL` is correct
+- Check database is running and accessible
+- Verify username/password are correct
+- Check network connectivity (ping database host)
+
+### CORS Errors
+
+**Symptom:** Browser shows CORS policy errors.
+
+**Solutions:**
+- Ensure `APP_CORS_ALLOWED_ORIGINS` includes your frontend URL
+- Check for typos (trailing slashes, http vs https)
+- Don't use `*` with credentials
+
+### Out of Memory
+
+**Symptom:** Container crashes or becomes unresponsive.
+
+**Solutions:**
+- Increase `JAVA_TOOL_OPTIONS` `-Xmx` value
+- Increase Docker container memory limit
+- Check for memory leaks in application logs
+
+### Wrong Profile Active
+
+**Symptom:** Development settings active in production.
+
+**Solutions:**
+- Verify `SPRING_PROFILES_ACTIVE=prod` is set
+- Check environment variable is being passed to container
+- Restart container after changing environment variables
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Docker Deployment" icon="docker" href="/deployment/docker">
+    Learn how to deploy with Docker
+  </Card>
+  <Card title="Database Setup" icon="database" href="/deployment/database-setup">
+    Set up PostgreSQL database
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get started with the API
+  </Card>
+  <Card title="Authentication" icon="lock" href="/authentication">
+    Configure authentication and security
+  </Card>
+</CardGroup>

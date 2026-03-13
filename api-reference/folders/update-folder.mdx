@@ -1,0 +1,158 @@
+---
+title: "Update Folder"
+api: "PUT /api/folders/{folderId}"
+description: "Update an existing folder"
+---
+
+Update properties of an existing folder. Only the fields provided in the request body will be updated. The folder must belong to the authenticated user.
+
+## Authentication
+
+Requires a valid JWT token in the Authorization header.
+
+## Path Parameters
+
+<ParamField path="folderId" type="integer" required>
+  The unique identifier of the folder to update
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include the fields you want to update.
+
+<ParamField body="name" type="string">
+  The name of the folder (max 100 characters)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description of the folder
+</ParamField>
+
+<ParamField body="color" type="string">
+  Hex color code for the folder (e.g., "#FF5733", max 7 characters)
+</ParamField>
+
+<ParamField body="icon" type="string">
+  Icon identifier for the folder (max 50 characters)
+</ParamField>
+
+<ParamField body="displayOrder" type="integer">
+  Sort order for displaying the folder
+</ParamField>
+
+<ParamField body="isArchived" type="boolean">
+  Whether the folder should be archived
+</ParamField>
+
+## Response
+
+<ResponseField name="folderId" type="integer">
+  Unique identifier of the folder
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns the folder
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the folder
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description of the folder
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  Hex color code of the folder
+</ResponseField>
+
+<ResponseField name="icon" type="string">
+  Icon identifier for the folder
+</ResponseField>
+
+<ResponseField name="parentFolderId" type="integer">
+  ID of the parent folder (null if top-level)
+</ResponseField>
+
+<ResponseField name="displayOrder" type="integer">
+  Sort order for displaying the folder
+</ResponseField>
+
+<ResponseField name="isArchived" type="boolean">
+  Whether the folder is archived
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  Array of tags associated with the folder
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the folder was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp of when the folder was last updated
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X PUT https://api.taskpro.com/api/folders/42 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Work Projects",
+    "color": "#8B5CF6",
+    "displayOrder": 5
+  }'
+```
+
+```bash cURL (Archive Folder)
+curl -X PUT https://api.taskpro.com/api/folders/42 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "isArchived": true
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 Success
+{
+  "folderId": 42,
+  "userId": 123,
+  "name": "Updated Work Projects",
+  "description": "All work-related projects",
+  "color": "#8B5CF6",
+  "icon": "briefcase",
+  "parentFolderId": null,
+  "displayOrder": 5,
+  "isArchived": false,
+  "tags": [
+    {
+      "tagId": 1,
+      "name": "urgent",
+      "color": "#EF4444"
+    }
+  ],
+  "createdAt": "2026-03-13T10:30:00",
+  "updatedAt": "2026-03-13T14:15:00"
+}
+```
+
+```json 401 Unauthorized
+{
+  "detail": "Invalid or missing authentication token"
+}
+```
+
+```json 404 Not Found
+{
+  "detail": "Folder not found"
+}
+```
+
+</ResponseExample>

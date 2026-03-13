@@ -1,0 +1,132 @@
+---
+title: "Get Folders"
+api: "GET /api/folders"
+description: "Retrieve all folders for the authenticated user"
+---
+
+Get a list of all folders belonging to the authenticated user. By default, archived folders are excluded.
+
+## Authentication
+
+Requires a valid JWT token in the Authorization header.
+
+## Query Parameters
+
+<ParamField query="includeArchived" type="boolean" default="false">
+  Whether to include archived folders in the response
+</ParamField>
+
+## Response
+
+Returns an array of folder objects.
+
+<ResponseField name="folderId" type="integer">
+  Unique identifier of the folder
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns the folder
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the folder
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description of the folder
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  Hex color code of the folder
+</ResponseField>
+
+<ResponseField name="icon" type="string">
+  Icon identifier for the folder
+</ResponseField>
+
+<ResponseField name="parentFolderId" type="integer">
+  ID of the parent folder (null if top-level)
+</ResponseField>
+
+<ResponseField name="displayOrder" type="integer">
+  Sort order for displaying the folder
+</ResponseField>
+
+<ResponseField name="isArchived" type="boolean">
+  Whether the folder is archived
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  Array of tags associated with the folder
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the folder was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp of when the folder was last updated
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.taskpro.com/api/folders \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+```bash cURL (Include Archived)
+curl -X GET "https://api.taskpro.com/api/folders?includeArchived=true" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 Success
+[
+  {
+    "folderId": 42,
+    "userId": 123,
+    "name": "Work Projects",
+    "description": "All work-related projects",
+    "color": "#3B82F6",
+    "icon": "briefcase",
+    "parentFolderId": null,
+    "displayOrder": 1,
+    "isArchived": false,
+    "tags": [
+      {
+        "tagId": 1,
+        "name": "urgent",
+        "color": "#EF4444"
+      }
+    ],
+    "createdAt": "2026-03-13T10:30:00",
+    "updatedAt": "2026-03-13T10:30:00"
+  },
+  {
+    "folderId": 43,
+    "userId": 123,
+    "name": "Personal",
+    "description": "Personal tasks and projects",
+    "color": "#10B981",
+    "icon": "home",
+    "parentFolderId": null,
+    "displayOrder": 2,
+    "isArchived": false,
+    "tags": [],
+    "createdAt": "2026-03-13T11:00:00",
+    "updatedAt": "2026-03-13T11:00:00"
+  }
+]
+```
+
+```json 401 Unauthorized
+{
+  "detail": "Invalid or missing authentication token"
+}
+```
+
+</ResponseExample>

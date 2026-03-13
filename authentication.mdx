@@ -1,0 +1,297 @@
+---
+title: 'Authentication'
+description: 'Learn how to authenticate with Task Pro API using JWT tokens'
+---
+
+## Overview
+
+Task Pro API uses JWT (JSON Web Tokens) for authentication. After registering and logging in, you'll receive an access token that must be included in the Authorization header of all protected API requests.
+
+## Authentication Flow
+
+<Steps>
+  <Step title="Register a new user">
+    Create a new account with username, email, and password.
+  </Step>
+  <Step title="Login to receive JWT token">
+    Authenticate with your credentials to get an access token.
+  </Step>
+  <Step title="Include token in requests">
+    Add the token to the Authorization header for all protected endpoints.
+  </Step>
+  <Step title="Token validation">
+    The API validates your token on each request using the JWT filter.
+  </Step>
+</Steps>
+
+## Registration
+
+Create a new user account by sending a POST request to `/api/auth/register`.
+
+### Request
+
+```bash
+curl -X POST https://api.taskpro.com/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "johndoe",
+    "email": "john@example.com",
+    "password": "securepassword123",
+    "fullName": "John Doe"
+  }'
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `username` | string | Yes | Unique username (max 50 chars) |
+| `email` | string | Yes | Unique email address (max 255 chars) |
+| `password` | string | Yes | User password (will be hashed) |
+| `fullName` | string | No | User's full name (max 100 chars) |
+
+### Response
+
+```json
+{
+  "userId": 1,
+  "username": "johndoe",
+  "email": "john@example.com",
+  "fullName": "John Doe",
+  "avatarUrl": null,
+  "isActive": true,
+  "emailVerified": false,
+  "createdAt": "2024-03-15T10:30:00"
+}
+```
+
+<Note>
+  The password is automatically hashed before storage. The API never returns password hashes in responses.
+</Note>
+
+## Login
+
+Authenticate with your credentials to receive a JWT access token.
+
+### Request
+
+```bash
+curl -X POST https://api.taskpro.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "securepassword123"
+  }'
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `email` | string | Yes | User's email address |
+| `password` | string | Yes | User's password |
+
+### Response
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTcxMDQ5MjYwMCwiZXhwIjoxNzEwNTc5MDAwfQ.signature",
+  "tokenType": "bearer"
+}
+```
+
+<Warning>
+  Store the access token securely. Never expose it in client-side code or commit it to version control.
+</Warning>
+
+## Using the Access Token
+
+Include the JWT token in the Authorization header for all protected API requests:
+
+```bash
+curl -X GET https://api.taskpro.com/api/tasks \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Token Format
+
+The Authorization header must follow this format:
+```
+Authorization: Bearer <access_token>
+```
+
+<CodeGroup>
+```bash cURL
+curl -X GET https://api.taskpro.com/api/tasks \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+```javascript JavaScript
+fetch('https://api.taskpro.com/api/tasks', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': f'Bearer {access_token}',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get('https://api.taskpro.com/api/tasks', headers=headers)
+```
+
+```kotlin Kotlin
+val token = "YOUR_ACCESS_TOKEN"
+val request = Request.Builder()
+    .url("https://api.taskpro.com/api/tasks")
+    .addHeader("Authorization", "Bearer $token")
+    .build()
+```
+</CodeGroup>
+
+## Get Current User
+
+Retrieve information about the authenticated user:
+
+```bash
+curl -X GET https://api.taskpro.com/api/auth/me \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Response
+
+```json
+{
+  "user_id": 1,
+  "username": "johndoe",
+  "email": "john@example.com",
+  "full_name": "John Doe",
+  "avatar_url": null,
+  "is_active": true,
+  "email_verified": false,
+  "created_at": "2024-03-15T10:30:00"
+}
+```
+
+## Security Configuration
+
+The API implements the following security measures:
+
+### JWT Authentication Filter
+
+The `JwtAuthFilter` validates tokens before allowing access to protected endpoints. It:
+- Extracts the JWT from the Authorization header
+- Validates the token signature and expiration
+- Sets the authenticated user ID in the request context
+
+### CORS Configuration
+
+Cross-Origin Resource Sharing (CORS) is configured via environment variables:
+
+```bash
+APP_CORS_ALLOWED_ORIGINS=https://myapp.com,https://app.myapp.com
+```
+
+<Warning>
+  Never use `*` for CORS origins in production. Always specify exact domains.
+</Warning>
+
+### Public Endpoints
+
+The following endpoints are publicly accessible without authentication:
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /actuator/health` - Health check
+- `GET /actuator/info` - Application info
+
+### Protected Endpoints
+
+All other endpoints require a valid JWT token:
+- `/api/tasks/**` - Task management
+- `/api/folders/**` - Folder management
+- `/api/tags/**` - Tag management
+- `/api/subtasks/**` - Subtask management
+- `GET /api/auth/me` - Current user info
+
+## Error Responses
+
+### Unauthorized (401)
+
+Returned when the token is missing, invalid, or expired:
+
+```json
+{
+  "detail": "Could not validate credentials"
+}
+```
+
+### Common Authentication Errors
+
+| Status | Error | Solution |
+|--------|-------|----------|
+| 401 | Token missing | Include Authorization header with Bearer token |
+| 401 | Token expired | Login again to get a new token |
+| 401 | Invalid token | Verify token format and signature |
+| 401 | User not found | Ensure the user account exists and is active |
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Token Storage" icon="database">
+    Store tokens securely in HTTP-only cookies or secure storage, never in localStorage for sensitive applications.
+  </Card>
+  <Card title="Token Refresh" icon="rotate">
+    Implement token refresh logic to maintain user sessions without requiring frequent re-authentication.
+  </Card>
+  <Card title="HTTPS Only" icon="shield">
+    Always use HTTPS in production to prevent token interception.
+  </Card>
+  <Card title="Token Expiration" icon="clock">
+    Handle token expiration gracefully by redirecting to login when receiving 401 errors.
+  </Card>
+</CardGroup>
+
+## Implementation Details
+
+The authentication system is built using:
+
+- **Spring Security** - Core security framework
+- **Auth0 Java JWT** - JWT token generation and validation
+- **BCrypt** - Password hashing
+- **Custom JWT Filter** - Token validation on each request
+
+From `SecurityConfig.kt`:
+```kotlin
+@Configuration
+@EnableMethodSecurity
+class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter?,
+                     private val corsConfigurationSource: CorsConfigurationSource) {
+
+    @Bean
+    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http
+            .cors { it.configurationSource(corsConfigurationSource) }
+            .csrf { it.disable() }
+            .authorizeHttpRequests { auth ->
+                auth.requestMatchers("/api/**", "/actuator/health", "/actuator/info").permitAll()
+                    .anyRequest().authenticated()
+            }
+        
+        if (jwtAuthFilter != null) {
+            http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
+        }
+        
+        return http.build()
+    }
+}
+```
+
+<Info>
+  The JWT filter is added before the `UsernamePasswordAuthenticationFilter` to intercept and validate tokens early in the request processing chain.
+</Info>

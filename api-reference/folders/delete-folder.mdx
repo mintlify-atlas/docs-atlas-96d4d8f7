@@ -1,0 +1,54 @@
+---
+title: "Delete Folder"
+api: "DELETE /api/folders/{folderId}"
+description: "Delete a folder permanently"
+---
+
+Permanently delete a folder. The folder must belong to the authenticated user. This action cannot be undone.
+
+<Warning>
+  Deleting a folder will affect any tasks or nested folders associated with it. Consider archiving the folder instead if you want to preserve the data.
+</Warning>
+
+## Authentication
+
+Requires a valid JWT token in the Authorization header.
+
+## Path Parameters
+
+<ParamField path="folderId" type="integer" required>
+  The unique identifier of the folder to delete
+</ParamField>
+
+## Response
+
+Returns a `204 No Content` response on successful deletion.
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE https://api.taskpro.com/api/folders/42 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text 204 No Content
+(No response body)
+```
+
+```json 401 Unauthorized
+{
+  "detail": "Invalid or missing authentication token"
+}
+```
+
+```json 404 Not Found
+{
+  "detail": "Folder not found"
+}
+```
+
+</ResponseExample>

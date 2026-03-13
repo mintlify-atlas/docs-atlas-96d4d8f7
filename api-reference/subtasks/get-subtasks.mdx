@@ -1,0 +1,160 @@
+---
+title: "Get Subtasks"
+api: "GET /api/tasks/{taskId}/subtasks"
+description: "Retrieve all subtasks for a specific task"
+---
+
+Retrieves a list of all subtasks associated with a parent task. Only subtasks belonging to tasks owned by the authenticated user are returned.
+
+## Authentication
+
+Requires authentication via session cookie or Bearer token.
+
+## Path Parameters
+
+<ParamField path="taskId" type="long" required>
+  The ID of the parent task whose subtasks you want to retrieve
+</ParamField>
+
+## Response
+
+Returns an array of subtask objects.
+
+<ResponseField name="subtaskId" type="long">
+  Unique identifier for the subtask
+</ResponseField>
+
+<ResponseField name="taskId" type="long">
+  ID of the parent task
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The subtask title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  The subtask description
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  Array of tag objects associated with the subtask
+</ResponseField>
+
+<ResponseField name="durationTagId" type="integer">
+  ID of the duration tag indicating estimated time
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status: `pending`, `in_progress`, or `completed`
+</ResponseField>
+
+<ResponseField name="completedAt" type="datetime">
+  Timestamp when the subtask was completed (null if not completed)
+</ResponseField>
+
+<ResponseField name="displayOrder" type="integer">
+  Order position for displaying the subtask
+</ResponseField>
+
+<ResponseField name="createdAt" type="datetime">
+  Timestamp when the subtask was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="datetime">
+  Timestamp when the subtask was last updated
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://api.taskpro.com/api/tasks/123/subtasks \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```python Python
+import requests
+
+url = "https://api.taskpro.com/api/tasks/123/subtasks"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN"
+}
+
+response = requests.get(url, headers=headers)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.taskpro.com/api/tasks/123/subtasks', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+
+const data = await response.json();
+console.log(data);
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "subtaskId": 456,
+    "taskId": 123,
+    "title": "Research API options",
+    "description": "Look into REST vs GraphQL for the project",
+    "tags": [
+      {
+        "tagId": 5,
+        "name": "research",
+        "color": "#3B82F6"
+      }
+    ],
+    "durationTagId": 2,
+    "status": "completed",
+    "completedAt": "2026-03-12T15:30:00",
+    "displayOrder": 1,
+    "createdAt": "2026-03-10T10:30:00",
+    "updatedAt": "2026-03-12T15:30:00"
+  },
+  {
+    "subtaskId": 457,
+    "taskId": 123,
+    "title": "Write API documentation",
+    "description": "Document all endpoints and data models",
+    "tags": [
+      {
+        "tagId": 7,
+        "name": "documentation",
+        "color": "#10B981"
+      }
+    ],
+    "durationTagId": 3,
+    "status": "in_progress",
+    "completedAt": null,
+    "displayOrder": 2,
+    "createdAt": "2026-03-11T09:00:00",
+    "updatedAt": "2026-03-13T08:15:00"
+  },
+  {
+    "subtaskId": 458,
+    "taskId": 123,
+    "title": "Create integration tests",
+    "description": null,
+    "tags": [],
+    "durationTagId": null,
+    "status": "pending",
+    "completedAt": null,
+    "displayOrder": 3,
+    "createdAt": "2026-03-11T09:05:00",
+    "updatedAt": "2026-03-11T09:05:00"
+  }
+]
+```
+
+```json 401 Unauthorized
+{
+  "detail": "Authentication required"
+}
+```
+</ResponseExample>

@@ -1,0 +1,190 @@
+---
+title: "Get Tasks"
+description: "Retrieve a list of tasks for the authenticated user"
+---
+
+## GET /api/tasks
+
+Retrieves all tasks for the authenticated user with optional filtering.
+
+### Authentication
+
+Required. Use JWT Bearer token in the Authorization header.
+
+### Query Parameters
+
+<ParamField query="folderId" type="integer">
+  Filter tasks by folder ID. If provided, only tasks in the specified folder are returned.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter tasks by status. Valid values: `pending`, `in_progress`, `completed`, `cancelled`
+</ParamField>
+
+<ParamField query="includeArchived" type="boolean" default="false">
+  Whether to include archived tasks in the results
+</ParamField>
+
+### Response
+
+Returns an array of task objects with progress information.
+
+<ResponseField name="taskId" type="integer">
+  Unique identifier for the task
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns the task
+</ResponseField>
+
+<ResponseField name="folderId" type="integer">
+  ID of the folder containing the task
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  Array of tag objects associated with the task
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The task title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  The task description
+</ResponseField>
+
+<ResponseField name="durationTagId" type="integer">
+  ID of the duration tag
+</ResponseField>
+
+<ResponseField name="priority" type="integer">
+  Priority level of the task
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status: `pending`, `in_progress`, `completed`, or `cancelled`
+</ResponseField>
+
+<ResponseField name="dueDate" type="string">
+  Due date in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="dueTime" type="string">
+  Due time in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="completedAt" type="string">
+  Timestamp when the task was completed (null if not completed)
+</ResponseField>
+
+<ResponseField name="displayOrder" type="integer">
+  Display order in lists
+</ResponseField>
+
+<ResponseField name="isArchived" type="boolean">
+  Whether the task is archived
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Timestamp when the task was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Timestamp when the task was last updated
+</ResponseField>
+
+<ResponseField name="totalSubtasks" type="integer">
+  Total number of subtasks
+</ResponseField>
+
+<ResponseField name="completedSubtasks" type="integer">
+  Number of completed subtasks
+</ResponseField>
+
+<ResponseField name="completionPercentage" type="number">
+  Percentage of subtasks completed (0-100)
+</ResponseField>
+
+### Example Request
+
+```bash
+curl -X GET "https://api.taskpro.com/api/tasks?folderId=5&status=pending" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Example Request (All Tasks)
+
+```bash
+curl -X GET https://api.taskpro.com/api/tasks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Example Request (Include Archived)
+
+```bash
+curl -X GET "https://api.taskpro.com/api/tasks?includeArchived=true" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Success Response (200 OK)
+
+```json
+[
+  {
+    "taskId": 42,
+    "userId": 123,
+    "folderId": 5,
+    "tags": [
+      {
+        "tagId": 1,
+        "name": "Documentation",
+        "color": "#3B82F6"
+      }
+    ],
+    "title": "Complete API documentation",
+    "description": "Write comprehensive API docs for all endpoints",
+    "durationTagId": null,
+    "priority": 2,
+    "status": "pending",
+    "dueDate": "2026-03-20",
+    "dueTime": "17:00:00",
+    "completedAt": null,
+    "displayOrder": 0,
+    "isArchived": false,
+    "createdAt": "2026-03-13T10:30:00",
+    "updatedAt": "2026-03-13T10:30:00",
+    "totalSubtasks": 5,
+    "completedSubtasks": 2,
+    "completionPercentage": 40.0
+  },
+  {
+    "taskId": 43,
+    "userId": 123,
+    "folderId": 5,
+    "tags": [],
+    "title": "Review pull requests",
+    "description": null,
+    "durationTagId": 1,
+    "priority": 1,
+    "status": "pending",
+    "dueDate": "2026-03-14",
+    "dueTime": null,
+    "completedAt": null,
+    "displayOrder": 1,
+    "isArchived": false,
+    "createdAt": "2026-03-13T11:00:00",
+    "updatedAt": "2026-03-13T11:00:00",
+    "totalSubtasks": 0,
+    "completedSubtasks": 0,
+    "completionPercentage": null
+  }
+]
+```
+
+### Error Response (401 Unauthorized)
+
+```json
+{
+  "detail": "Unauthorized"
+}
+```

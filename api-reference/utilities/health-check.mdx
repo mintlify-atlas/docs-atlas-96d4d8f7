@@ -1,0 +1,116 @@
+---
+title: "Health Check"
+api: "GET /actuator/health"
+description: "Check the health status of the Task Pro API"
+---
+
+## Overview
+
+The health check endpoint provides real-time status information about the Task Pro API and its dependencies. This endpoint is powered by Spring Boot Actuator and is commonly used for monitoring, load balancing, and container orchestration health checks.
+
+## Endpoint
+
+```
+GET /actuator/health
+```
+
+## Authentication
+
+No authentication required. This endpoint is publicly accessible to enable monitoring services and health checks.
+
+## Response
+
+<ResponseField name="status" type="string" required>
+  The overall health status of the application. Possible values:
+  - `UP` - Application is healthy and running
+  - `DOWN` - Application or critical dependencies are not functioning
+  - `OUT_OF_SERVICE` - Application is temporarily unavailable
+  - `UNKNOWN` - Health status cannot be determined
+</ResponseField>
+
+<ResponseField name="components" type="object">
+  Detailed health information for individual components (database, disk space, etc.). Available when detailed health information is enabled.
+</ResponseField>
+
+### Response Example
+
+<ResponseExample>
+```json Healthy
+{
+  "status": "UP"
+}
+```
+
+```json Detailed (when enabled)
+{
+  "status": "UP",
+  "components": {
+    "db": {
+      "status": "UP",
+      "details": {
+        "database": "PostgreSQL",
+        "validationQuery": "isValid()"
+      }
+    },
+    "diskSpace": {
+      "status": "UP",
+      "details": {
+        "total": 499963174912,
+        "free": 215415214080,
+        "threshold": 10485760,
+        "exists": true
+      }
+    },
+    "ping": {
+      "status": "UP"
+    }
+  }
+}
+```
+
+```json Unhealthy
+{
+  "status": "DOWN"
+}
+```
+</ResponseExample>
+
+## Use Cases
+
+### Kubernetes Liveness Probe
+```yaml
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+```
+
+### Docker Health Check
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+```
+
+### Load Balancer Configuration
+Use this endpoint to configure health checks in your load balancer (AWS ALB, GCP Load Balancer, Azure Load Balancer) to automatically route traffic away from unhealthy instances.
+
+### Monitoring & Alerting
+Integrate with monitoring tools like Prometheus, Datadog, or New Relic to track application uptime and trigger alerts when the service becomes unhealthy.
+
+## Status Codes
+
+<ResponseField name="200" type="OK">
+  The service is healthy and responding normally.
+</ResponseField>
+
+<ResponseField name="503" type="Service Unavailable">
+  The service or one of its critical dependencies is down or unhealthy.
+</ResponseField>
+
+## Notes
+
+- This endpoint returns a minimal response by default. Configure `management.endpoint.health.show-details=always` in your application properties to expose detailed component health information.
+- The endpoint does not count towards rate limiting.
+- Response time should typically be under 100ms for healthy services.

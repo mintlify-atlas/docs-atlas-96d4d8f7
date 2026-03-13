@@ -1,80 +1,150 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Quickstart'
+description: 'Get started with Task Pro API in minutes'
 ---
 
-## Get started in three steps
+## Welcome to Task Pro API
 
-Get your documentation site running locally and make your first customization.
+Task Pro API is a powerful RESTful API for managing tasks, folders, tags, and subtasks. Built with Spring Boot and Kotlin, it provides a complete task management solution with JWT authentication.
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Register a new account">
+    Create your account by sending a POST request to the registration endpoint:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash
+    curl -X POST https://api.taskpro.com/api/auth/register \
+      -H "Content-Type: application/json" \
+      -d '{
+        "username": "johndoe",
+        "email": "john@example.com",
+        "password": "securepassword123",
+        "fullName": "John Doe"
+      }'
+    ```
 
-### Step 2: Deploy your changes
+    **Response:**
+    ```json
+    {
+      "userId": 1,
+      "username": "johndoe",
+      "email": "john@example.com",
+      "fullName": "John Doe",
+      "avatarUrl": null,
+      "isActive": true,
+      "emailVerified": false,
+      "createdAt": "2024-03-15T10:30:00"
+    }
+    ```
+  </Step>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+  <Step title="Login and get your access token">
+    Authenticate with your credentials to receive a JWT token:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```bash
+    curl -X POST https://api.taskpro.com/api/auth/login \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "john@example.com",
+        "password": "securepassword123"
+      }'
+    ```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    **Response:**
+    ```json
+    {
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "tokenType": "bearer"
+    }
+    ```
 
-### Step 3: Go live
+    <Note>
+      Save this access token - you'll need it for all authenticated requests.
+    </Note>
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Create your first task">
+    Use your access token to create a task:
 
-## Next steps
+    ```bash
+    curl -X POST https://api.taskpro.com/api/tasks \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+      -d '{
+        "title": "Complete project documentation",
+        "description": "Write comprehensive API documentation",
+        "priority": 1,
+        "status": "pending",
+        "dueDate": "2024-03-20"
+      }'
+    ```
 
-Now that you have your docs running, explore these key features:
+    **Response:**
+    ```json
+    {
+      "taskId": 1,
+      "userId": 1,
+      "folderId": null,
+      "tags": [],
+      "title": "Complete project documentation",
+      "description": "Write comprehensive API documentation",
+      "durationTagId": null,
+      "priority": 1,
+      "status": "pending",
+      "dueDate": "2024-03-20",
+      "dueTime": null,
+      "completedAt": null,
+      "displayOrder": 0,
+      "isArchived": false,
+      "createdAt": "2024-03-15T10:35:00",
+      "updatedAt": "2024-03-15T10:35:00"
+    }
+    ```
+  </Step>
+
+  <Step title="Retrieve your tasks">
+    Get all your tasks with optional filters:
+
+    ```bash
+    curl -X GET https://api.taskpro.com/api/tasks \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+    ```
+
+    You can also filter by status:
+    ```bash
+    curl -X GET "https://api.taskpro.com/api/tasks?status=pending" \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+    ```
+  </Step>
+</Steps>
+
+## What's Next?
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Authentication" icon="lock" href="/authentication">
+    Learn about JWT authentication, token management, and security
+  </Card>
+  <Card title="Core Concepts" icon="book" href="/concepts/tasks">
+    Understand tasks, folders, tags, and subtasks
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/tasks/create-task">
+    Explore all available endpoints and their parameters
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/deployment/docker">
+    Deploy Task Pro API to production
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## API Base URL
+
+<Info>
+  All API requests should be made to: `https://api.taskpro.com`
+  
+  For local development: `http://localhost:8080`
+</Info>
+
+## Need Help?
+
+If you encounter any issues or have questions:
+- Check the [Core Concepts](/concepts/tasks) for detailed explanations
+- Review the [API Reference](/api-reference) for complete endpoint documentation
+- Ensure your JWT token is valid and included in the Authorization header

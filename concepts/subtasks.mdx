@@ -1,0 +1,483 @@
+---
+title: 'Subtasks'
+description: 'Break down complex tasks into manageable subtasks'
+---
+
+## Overview
+
+Subtasks allow you to break down complex tasks into smaller, manageable pieces. Each subtask belongs to a parent task and can have its own status, description, tags, and completion tracking. Subtask completion automatically contributes to the parent task's progress percentage.
+
+## Subtask Model
+
+The Subtask entity structure:
+
+```kotlin
+@Entity
+@Table(name = "subtasks")
+data class Subtask(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val subtaskId: Long? = null,
+    
+    val taskId: Long,
+    val title: String,
+    val description: String? = null,
+    val durationTagId: Int? = null,
+    val status: Status = Status.PENDING,
+    val completedAt: LocalDateTime? = null,
+    val displayOrder: Int = 0,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null,
+    
+    var task: Task? = null,
+    var tags: Set<Tag> = emptySet()
+)
+```
+
+## Subtask Properties
+
+### Core Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `subtaskId` | Long | Unique identifier (auto-generated) |
+| `taskId` | Long | ID of the parent task (required) |
+| `title` | String | Subtask title (required, max 255 chars) |
+| `description` | String | Detailed description (optional, text) |
+
+### Status & Tracking
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `status` | Enum | Subtask status: PENDING, IN_PROGRESS, COMPLETED |
+| `completedAt` | LocalDateTime | Timestamp when subtask was completed |
+| `displayOrder` | Int | Order for sorting subtasks (default: 0) |
+
+### Time Estimation
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `durationTagId` | Int | Reference to duration estimation |
+| `createdAt` | LocalDateTime | Subtask creation timestamp |
+| `updatedAt` | LocalDateTime | Last modification timestamp |
+
+### Relationships
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `task` | Task | Parent task this subtask belongs to |
+| `tags` | Set&lt;Tag&gt; | Associated tags for categorization |
+
+## Creating a Subtask
+
+Create a new subtask under an existing task:
+
+```bash
+curl -X POST https://api.taskpro.com/api/subtasks \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "taskId": 42,
+    "title": "Design wireframes",
+    "description": "Create low-fidelity wireframes for main user flows",
+    "tagIds": [2],
+    "displayOrder": 1
+  }'
+```
+
+### Request DTO
+
+```kotlin
+data class SubtaskCreateDto(
+    val taskId: Long,
+    val title: String,
+    val description: String? = null,
+    val tagIds: List<Long>? = null,
+    val durationTagId: Int? = null,
+    val status: String = "pending",
+    val displayOrder: Int = 0
+)
+```
+
+### Response
+
+```json
+{
+  "subtaskId": 15,
+  "taskId": 42,
+  "title": "Design wireframes",
+  "description": "Create low-fidelity wireframes for main user flows",
+  "durationTagId": null,
+  "status": "pending",
+  "completedAt": null,
+  "displayOrder": 1,
+  "tags": [
+    {
+      "tagId": 2,
+      "tagName": "design",
+      "color": "#3B82F6"
+    }
+  ],
+  "createdAt": "2024-03-15T14:30:00",
+  "updatedAt": "2024-03-15T14:30:00"
+}
+```
+
+<Info>
+  Subtasks are automatically associated with the authenticated user through the parent task's userId.
+</Info>
+
+## Retrieving Subtasks
+
+### Get Subtasks for a Task
+
+Retrieve all subtasks for a specific task:
+
+```bash
+curl -X GET https://api.taskpro.com/api/tasks/42/subtasks \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Response
+
+```json
+[
+  {
+    "subtaskId": 15,
+    "taskId": 42,
+    "title": "Design wireframes",
+    "description": "Create low-fidelity wireframes for main user flows",
+    "durationTagId": null,
+    "status": "completed",
+    "completedAt": "2024-03-16T10:30:00",
+    "displayOrder": 1,
+    "tags": [
+      {"tagId": 2, "tagName": "design", "color": "#3B82F6"}
+    ],
+    "createdAt": "2024-03-15T14:30:00",
+    "updatedAt": "2024-03-16T10:30:00"
+  },
+  {
+    "subtaskId": 16,
+    "taskId": 42,
+    "title": "Create high-fidelity mockups",
+    "description": "Design final UI mockups in Figma",
+    "durationTagId": null,
+    "status": "in_progress",
+    "completedAt": null,
+    "displayOrder": 2,
+    "tags": [
+      {"tagId": 2, "tagName": "design", "color": "#3B82F6"}
+    ],
+    "createdAt": "2024-03-15T14:35:00",
+    "updatedAt": "2024-03-16T09:00:00"
+  },
+  {
+    "subtaskId": 17,
+    "taskId": 42,
+    "title": "Get stakeholder approval",
+    "description": "Present designs to stakeholders and incorporate feedback",
+    "durationTagId": null,
+    "status": "pending",
+    "completedAt": null,
+    "displayOrder": 3,
+    "tags": [],
+    "createdAt": "2024-03-15T14:40:00",
+    "updatedAt": "2024-03-15T14:40:00"
+  }
+]
+```
+
+## Updating a Subtask
+
+Update subtask properties including status:
+
+```bash
+curl -X PUT https://api.taskpro.com/api/subtasks/15 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "status": "completed"
+  }'
+```
+
+### Update DTO
+
+```kotlin
+data class SubtaskUpdateDto(
+    val title: String? = null,
+    val description: String? = null,
+    val tagIds: List<Long>? = null,
+    val durationTagId: Int? = null,
+    val status: String? = null,
+    val displayOrder: Int? = null
+)
+```
+
+<Note>
+  When you set status to "completed", the `completedAt` timestamp is automatically set to the current time.
+</Note>
+
+## Deleting a Subtask
+
+Permanently delete a subtask:
+
+```bash
+curl -X DELETE https://api.taskpro.com/api/subtasks/15 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+<Warning>
+  Deleting a subtask affects the parent task's completion percentage. This action cannot be undone.
+</Warning>
+
+## Task Progress Tracking
+
+Subtasks automatically contribute to the parent task's progress. When you retrieve a task, it includes progress information:
+
+```bash
+curl -X GET https://api.taskpro.com/api/tasks \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Response with Progress
+
+```json
+[
+  {
+    "taskId": 42,
+    "title": "Design new landing page",
+    "status": "in_progress",
+    "totalSubtasks": 3,
+    "completedSubtasks": 1,
+    "completionPercentage": 33.33,
+    ...
+  }
+]
+```
+
+### Progress Calculation
+
+```kotlin
+val completionPercentage = if (totalSubtasks > 0) {
+    (completedSubtasks.toDouble() / totalSubtasks) * 100
+} else {
+    null
+}
+```
+
+<CardGroup cols={2}>
+  <Card title="0% Complete" icon="circle">
+    No subtasks are marked as completed
+  </Card>
+  <Card title="33% Complete" icon="circle-half-stroke">
+    1 out of 3 subtasks completed
+  </Card>
+  <Card title="66% Complete" icon="circle-three-quarters">
+    2 out of 3 subtasks completed
+  </Card>
+  <Card title="100% Complete" icon="circle-check">
+    All subtasks marked as completed
+  </Card>
+</CardGroup>
+
+## Subtask Status Workflow
+
+Typical workflow for subtask status changes:
+
+<Steps>
+  <Step title="Created (PENDING)">
+    New subtask starts with status "pending"
+  </Step>
+  <Step title="Started (IN_PROGRESS)">
+    Update status to "in_progress" when work begins
+  </Step>
+  <Step title="Completed (COMPLETED)">
+    Mark as "completed" when finished - `completedAt` is automatically set
+  </Step>
+</Steps>
+
+## Subtask Relationships
+
+### Many-to-One: Subtask → Task
+
+Each subtask belongs to exactly one task:
+
+```kotlin
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "task_id", insertable = false, updatable = false)
+var task: Task? = null
+```
+
+The parent task has cascade deletion enabled:
+
+```kotlin
+// In Task.kt
+@OneToMany(mappedBy = "task", cascade = [CascadeType.ALL], orphanRemoval = true)
+var subtasks: Set<Subtask> = emptySet()
+```
+
+<Warning>
+  When a task is deleted, all its subtasks are automatically deleted due to `CascadeType.ALL` and `orphanRemoval = true`.
+</Warning>
+
+### Many-to-Many: Subtask ↔ Tag
+
+Subtasks can have multiple tags:
+
+```kotlin
+@ManyToMany
+@JoinTable(
+    name = "subtask_tags",
+    joinColumns = [JoinColumn(name = "subtask_id")],
+    inverseJoinColumns = [JoinColumn(name = "tag_id")]
+)
+var tags: Set<Tag> = emptySet()
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Multi-Step Tasks" icon="list-ol">
+    Break complex tasks into sequential steps that must be completed in order.
+  </Card>
+  <Card title="Parallel Work" icon="layer-group">
+    Track multiple work streams that can be done simultaneously.
+  </Card>
+  <Card title="Checklists" icon="list-check">
+    Create simple checklists for tasks with many small items.
+  </Card>
+  <Card title="Phase Tracking" icon="timeline">
+    Track different phases of a project: research, design, development, testing, deployment.
+  </Card>
+</CardGroup>
+
+## Example: Complete Task Breakdown
+
+A typical task broken down into subtasks:
+
+```json
+{
+  "task": {
+    "taskId": 42,
+    "title": "Implement user authentication",
+    "status": "in_progress",
+    "totalSubtasks": 6,
+    "completedSubtasks": 3,
+    "completionPercentage": 50.0
+  },
+  "subtasks": [
+    {
+      "title": "Design database schema for users",
+      "status": "completed",
+      "displayOrder": 1,
+      "tags": [{"tagName": "backend", "color": "#10B981"}]
+    },
+    {
+      "title": "Implement user registration endpoint",
+      "status": "completed",
+      "displayOrder": 2,
+      "tags": [{"tagName": "backend", "color": "#10B981"}]
+    },
+    {
+      "title": "Implement login endpoint with JWT",
+      "status": "completed",
+      "displayOrder": 3,
+      "tags": [{"tagName": "backend", "color": "#10B981"}]
+    },
+    {
+      "title": "Create login UI component",
+      "status": "in_progress",
+      "displayOrder": 4,
+      "tags": [{"tagName": "frontend", "color": "#3B82F6"}]
+    },
+    {
+      "title": "Create registration UI component",
+      "status": "pending",
+      "displayOrder": 5,
+      "tags": [{"tagName": "frontend", "color": "#3B82F6"}]
+    },
+    {
+      "title": "Write integration tests",
+      "status": "pending",
+      "displayOrder": 6,
+      "tags": [{"tagName": "testing", "color": "#F59E0B"}]
+    }
+  ]
+}
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Keep subtasks focused">
+    Each subtask should represent a single, actionable piece of work.
+  </Step>
+  <Step title="Use appropriate granularity">
+    Aim for 3-7 subtasks per task. Too few and you're not breaking down enough; too many and you're over-engineering.
+  </Step>
+  <Step title="Order logically">
+    Use `displayOrder` to arrange subtasks in the sequence they should be completed.
+  </Step>
+  <Step title="Track time estimates">
+    Use `durationTagId` to estimate how long each subtask will take.
+  </Step>
+  <Step title="Tag by type">
+    Use tags to categorize subtasks by domain (frontend, backend, design, testing).
+  </Step>
+  <Step title="Update status regularly">
+    Keep subtask status current to accurately reflect progress on the parent task.
+  </Step>
+</Steps>
+
+## Display Order
+
+Subtasks support custom ordering through the `displayOrder` property:
+
+```bash
+# Reorder subtasks
+curl -X PUT https://api.taskpro.com/api/subtasks/15 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "displayOrder": 5
+  }'
+```
+
+<Tip>
+  When displaying subtasks, sort by `displayOrder` ascending, then by `subtaskId` for consistent ordering.
+</Tip>
+
+## Limitations
+
+<CardGroup cols={2}>
+  <Card title="No Nesting" icon="ban">
+    Subtasks cannot have their own subtasks. Keep the hierarchy at two levels: Task → Subtask.
+  </Card>
+  <Card title="Single Task Parent" icon="link">
+    A subtask can only belong to one task. It cannot be shared across multiple tasks.
+  </Card>
+  <Card title="No Direct User Association" icon="user">
+    Subtasks are associated with users through their parent task, not directly.
+  </Card>
+  <Card title="Cascade Deletion" icon="trash">
+    Deleting a task deletes all its subtasks. Consider archiving tasks instead.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tasks" icon="check" href="/concepts/tasks">
+    Learn more about the parent Task resource
+  </Card>
+  <Card title="Tags" icon="tag" href="/concepts/tags">
+    Categorize subtasks with tags
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/subtasks/create-subtask">
+    Explore all subtask endpoints
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get started with the Task Pro API
+  </Card>
+</CardGroup>

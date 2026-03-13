@@ -1,0 +1,233 @@
+---
+title: "Update Task"
+description: "Update an existing task"
+---
+
+## PUT /api/tasks/{taskId}
+
+Updates an existing task. Only provided fields will be updated.
+
+### Authentication
+
+Required. Use JWT Bearer token in the Authorization header.
+
+### Path Parameters
+
+<ParamField path="taskId" type="integer" required>
+  The unique identifier of the task to update
+</ParamField>
+
+### Request Body
+
+All fields are optional. Only include fields you want to update.
+
+<ParamField body="title" type="string">
+  The title of the task (max 255 characters)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Detailed description of the task
+</ParamField>
+
+<ParamField body="folderId" type="integer">
+  ID of the folder to move the task to
+</ParamField>
+
+<ParamField body="tagIds" type="array">
+  Array of tag IDs to associate with the task (replaces existing tags)
+</ParamField>
+
+<ParamField body="durationTagId" type="integer">
+  ID of the duration tag for time estimates
+</ParamField>
+
+<ParamField body="priority" type="integer">
+  Priority level of the task
+</ParamField>
+
+<ParamField body="status" type="string">
+  Status of the task. Valid values: `pending`, `in_progress`, `completed`, `cancelled`
+</ParamField>
+
+<ParamField body="dueDate" type="string">
+  Due date in ISO 8601 format (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="dueTime" type="string">
+  Due time in ISO 8601 format (HH:MM:SS)
+</ParamField>
+
+<ParamField body="displayOrder" type="integer">
+  Order for displaying the task in lists
+</ParamField>
+
+<ParamField body="isArchived" type="boolean">
+  Whether to archive or unarchive the task
+</ParamField>
+
+### Response
+
+<ResponseField name="taskId" type="integer">
+  Unique identifier for the task
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns the task
+</ResponseField>
+
+<ResponseField name="folderId" type="integer">
+  ID of the folder containing the task
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  Array of tag objects associated with the task
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The task title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  The task description
+</ResponseField>
+
+<ResponseField name="durationTagId" type="integer">
+  ID of the duration tag
+</ResponseField>
+
+<ResponseField name="priority" type="integer">
+  Priority level of the task
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status: `pending`, `in_progress`, `completed`, or `cancelled`
+</ResponseField>
+
+<ResponseField name="dueDate" type="string">
+  Due date in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="dueTime" type="string">
+  Due time in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="completedAt" type="string">
+  Timestamp when the task was completed (null if not completed)
+</ResponseField>
+
+<ResponseField name="displayOrder" type="integer">
+  Display order in lists
+</ResponseField>
+
+<ResponseField name="isArchived" type="boolean">
+  Whether the task is archived
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Timestamp when the task was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Timestamp when the task was last updated
+</ResponseField>
+
+<ResponseField name="totalSubtasks" type="integer">
+  Total number of subtasks
+</ResponseField>
+
+<ResponseField name="completedSubtasks" type="integer">
+  Number of completed subtasks
+</ResponseField>
+
+<ResponseField name="completionPercentage" type="number">
+  Percentage of subtasks completed (0-100)
+</ResponseField>
+
+### Example Request (Update Status)
+
+```bash
+curl -X PUT https://api.taskpro.com/api/tasks/42 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "in_progress"
+  }'
+```
+
+### Example Request (Update Multiple Fields)
+
+```bash
+curl -X PUT https://api.taskpro.com/api/tasks/42 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Complete API documentation (Updated)",
+    "priority": 3,
+    "status": "in_progress",
+    "dueDate": "2026-03-25"
+  }'
+```
+
+### Example Request (Archive Task)
+
+```bash
+curl -X PUT https://api.taskpro.com/api/tasks/42 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "isArchived": true
+  }'
+```
+
+### Success Response (200 OK)
+
+```json
+{
+  "taskId": 42,
+  "userId": 123,
+  "folderId": 5,
+  "tags": [
+    {
+      "tagId": 1,
+      "name": "Documentation",
+      "color": "#3B82F6"
+    },
+    {
+      "tagId": 3,
+      "name": "High Priority",
+      "color": "#EF4444"
+    }
+  ],
+  "title": "Complete API documentation (Updated)",
+  "description": "Write comprehensive API docs for all endpoints",
+  "durationTagId": null,
+  "priority": 3,
+  "status": "in_progress",
+  "dueDate": "2026-03-25",
+  "dueTime": "17:00:00",
+  "completedAt": null,
+  "displayOrder": 0,
+  "isArchived": false,
+  "createdAt": "2026-03-13T10:30:00",
+  "updatedAt": "2026-03-13T15:45:00",
+  "totalSubtasks": 5,
+  "completedSubtasks": 3,
+  "completionPercentage": 60.0
+}
+```
+
+### Error Response (404 Not Found)
+
+```json
+{
+  "detail": "Task not found"
+}
+```
+
+### Error Response (401 Unauthorized)
+
+```json
+{
+  "detail": "Unauthorized"
+}
+```
